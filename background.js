@@ -1,22 +1,11 @@
 var auth = false;
 var ports = {};
+const enc_message_code = "-".repeat(20) + "discord-enc" + "-".repeat(20) + "\\n"
+
 
 async function encrypt(text, publicKey) {
   try {
-    const encryptedData = await crypto.subtle.encrypt(
-      { name: "RSA-OAEP" },
-      publicKey,
-      new TextEncoder().encode(text)
-    );
-    return btoa(String.fromCharCode(...new Uint8Array(encryptedData))); // Base64 encode
-  } catch (error) {
-    console.error("Encryption error:", error);
-    throw error;
-  }
-}
 
-async function encrypt(text, publicKey) {
-  try {
     const encryptedData = await crypto.subtle.encrypt(
       { name: "RSA-OAEP" },
       publicKey,
@@ -48,13 +37,17 @@ function headers_connected() {
       if (message.channel_id in local_storage) {
 
         let pub_key = local_storage[message.channel_id]["publicKey"]
-        let imported_pub_key = await crypto.subtle.importKey("jwk", pub_key, { name: "RSA-OAEP", hash: "SHA-256" }, false, ["encrypt"])
-        let encoded_message = new TextEncoder().encode(message.message)
-        crypto.subtle.encrypt('RSA-OAEP', imported_pub_key, encoded_message).then(async (encryptedData) => {
-
-          send_to_port("content", {type: "send-message" , message: "-".repeat(20) + "discord enc" + "-".repeat(20) + "\\n" + btoa(String.fromCharCode(...new Uint8Array(encryptedData)))})
+        const imported_pub_key = await crypto.subtle.importKey(
+          "jwk",
+          pub_key,
+          { name: "RSA-OAEP", hash: "SHA-256" },
+          false, // Encrypt-only
+          ["encrypt"]
+        )
         
-        })
+        encrypted_mesage = await encrypt(message.message, imported_pub_key)
+        send_to_port("content", { type: "send-message", message: enc_message_code + encrypted_mesage })
+
       } else {
         send_to_port("content", { type: "create-key", channel_id: message.channel_id })
 
@@ -65,7 +58,7 @@ function headers_connected() {
     if (message.type === "key-set") {
       chrome.storage.local.set({ [message.channel_id]: { "publicKey": message.public, "privateKey": message.private } });
     }
-    
+
     if (message.type === "dec-message") {
       let local_storage = await chrome.storage.local.get()
 
