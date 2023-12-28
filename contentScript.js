@@ -76,7 +76,8 @@ function create_discord_button() {
 
         enc_button.onclick = async () => {
             //send to send only the encrypted message (needed pubkey from storage)
-            port.postMessage({ type: "b_click", channel_id: get_channel_id() })
+            const message_str = document.querySelector('[class*="markup"][class*="editor"]').querySelector("span span span").textContent
+            port.postMessage({ type: "b_click", channel_id: get_channel_id(), message: message_str})
 
         }
 
@@ -135,9 +136,10 @@ setInterval(function () {
         for (let i = 0; i < a.length; i++) {
             discord_message = a[i];
             text = discord_message.innerText;
-            if (text.includes(enc_message_code)) {
-                let encrypted_text = text.replace(enc_message_code, "")
-                port.postMessage({type: "dec-message", encrypted_text})
+            let rel_enc_message_code = enc_message_code.replace("\\n", "\n")
+            if (text.includes(rel_enc_message_code)) {
+                let encrypted_text = text.replace(rel_enc_message_code, "")
+                port.postMessage({type: "dec-message", message: encrypted_text, message_id: a[i].id.replace("message-content-", ""), channel_id:get_channel_id()})
             }
         }
     }
@@ -182,6 +184,10 @@ port.onMessage.addListener(async function (message) {
                 private: await export_key(keys.privateKey)
             });
         }
+    }
+    if (message.type === "set-message"){
+        discord_message = document.getElementById("message-content-" + message.message_id)
+        discord_message.innerHTML = message.message
     }
 });
 

@@ -18,6 +18,21 @@ async function encrypt(text, publicKey) {
   }
 }
 
+async function decrypt(encryptedData64, privateKey) {
+  try {
+    const encryptedData = new Uint8Array(atob(encryptedData64).split("").map((c) => c.charCodeAt(0)));
+    const decryptedData = await crypto.subtle.decrypt(
+      { name: "RSA-OAEP" },
+      privateKey,
+      encryptedData
+    );
+    console.warn(decryptedData)
+    return new TextDecoder().decode(decryptedData);
+  } catch (error) {
+    console.error("Decryption error:", error);
+    throw error;
+  }
+}
 
 
 var send_to_port = function (port_id, message) {
@@ -62,6 +77,19 @@ function headers_connected() {
 
     if (message.type === "dec-message") {
       let local_storage = await chrome.storage.local.get()
+      if (message.channel_id in local_storage){
+        const private_key = local_storage[message.channel_id]["privateKey"]
+        const imported_private_key = await crypto.subtle.importKey(
+          "jwk",
+          private_key,
+          { name: "RSA-OAEP", hash: "SHA-256" },
+          true,
+          ["decrypt"]
+        )
+        const decrypted_message = await decrypt(message.message, imported_private_key)
+        
+        send_to_port("content", {type:"set-message", message_id:message.message_id, message:decrypted_message})
+      }
 
     }
   });
