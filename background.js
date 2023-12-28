@@ -19,6 +19,7 @@ async function encrypt(text, publicKey) {
 }
 
 
+
 var send_to_port = function (port_id, message) {
   ports[port_id].postMessage(message);
 }
@@ -44,7 +45,7 @@ function headers_connected() {
           false, // Encrypt-only
           ["encrypt"]
         )
-        
+
         encrypted_mesage = await encrypt(message.message, imported_pub_key)
         send_to_port("content", { type: "send-message", message: enc_message_code + encrypted_mesage })
 
