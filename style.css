@@ -1,0 +1,39 @@
+body {
+    background-color: rgb(49, 49, 49);
+}
+
+h1 {
+    font-family: "Sans-serif";
+    font-weight: bold;
+    color: white;
+}
+
+.b_holder{
+    margin-top: 3cm;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#message_input {
+    border: solid;
+    border-color: grey;
+    align-self: center;
+}
+
+.b_holder > button{
+    background-color: #df4343;
+    font-weight: bold;
+    font-size: 1cm;
+    border: solid;
+    border-width: 5px;
+    border-radius: 30px;
+    border-color: rgb(255, 255, 255);
+    width: 6cm;
+    height: 3cm;
+}
+
+.b_holder > button:hover{
+    background-color:#632323;
+}
+

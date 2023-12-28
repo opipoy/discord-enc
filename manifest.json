@@ -1,0 +1,45 @@
+{
+  "name": "Discord Enc",
+  "version": "0.1.0",
+  "description": "encrypting and decrypting discord messages",
+  "permissions": [
+    "storage",
+    "tabs",
+    "webRequest"
+  ],
+  "host_permissions": [
+    "https://*.discord.com/*"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "enc_popup.html",
+        "enc-icon.svg"
+      ],
+      "matches": [
+        "https://*.discord.com/*"
+      ]
+    }
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "matches": [
+      "https://*.discord.com/*"
+    ]
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.discord.com/*"
+      ],
+      "js": [
+        "contentScript.js"
+      ]
+    }
+  ],
+  "action": {
+    "default_title": "Discord Enc",
+    "default_popup": "popup.html"
+  },
+  "manifest_version": 3
+}
