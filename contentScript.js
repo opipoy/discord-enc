@@ -14,6 +14,51 @@ async function create_keys() {
 
 const enc_message_code = "-".repeat(20) + "discord-enc" + "-".repeat(20) + "\\n"
 
+async function listen_for_messages() {
+    bg_port.onMessage.addListener(async function (message) {
+        if (message.type === "send-message" && authHeader != '') {
+
+            send_message(message.message, get_channel_id(), authHeader)
+
+        }
+        if (message.type === "header") {
+
+            const headers = message.request.requestHeaders;
+
+            for (const header of headers) {
+                if (header.name === "Authorization" && authHeader == '') {
+                    alert(`[discord-enc]: auth token found!`);
+                    authHeader = header.value;
+                    bg_port.postMessage({ type: "got-auth", auth: true });
+                    break;
+                }
+            }
+        }
+        if (message.type === "create-key") {
+            if (await ask_key_popup()) {
+                let export_key = async function (key) {
+                    return await window.crypto.subtle.exportKey('jwk', key)
+                }
+                let keys = await create_keys();
+                bg_port.postMessage({
+
+                    type: "key-set",
+
+                    channel_id: message.channel_id,
+
+                    public: await export_key(keys.publicKey),
+
+                    private: await export_key(keys.privateKey)
+                });
+            }
+        }
+        if (message.type === "set-message") {
+            discord_message = document.getElementById("message-content-" + message.message_id)
+            discord_message.innerHTML = message.message
+        }
+    });
+}
+
 async function ask_key_popup(buttons) {
     return new Promise(async (resolve) => {
         var div = document.createElement("div");
@@ -66,7 +111,9 @@ var get_channel_id = () => {
 function create_discord_button() {
     try {
         if (!port_is_open) {
-            port = chrome.runtime.connect({ name: "content" });
+            alert("reconnecting...")
+            bg_port = chrome.runtime.connect({ name: "content" });
+            listen_for_messages()
             port_is_open = true
         }
         let button_div = document.querySelector("[class*='inner_'][class*='sansAttachButton']").querySelector("[class*='buttons_']")
@@ -77,7 +124,7 @@ function create_discord_button() {
         enc_button.onclick = async () => {
             //send to send only the encrypted message (needed pubkey from storage)
             const message_str = document.querySelector('[class*="markup"][class*="editor"]').querySelector("span span span").textContent
-            port.postMessage({ type: "b_click", channel_id: get_channel_id(), message: message_str})
+            bg_port.postMessage({ type: "b_click", channel_id: get_channel_id(), message: message_str })
 
         }
 
@@ -95,7 +142,7 @@ function create_discord_button() {
 }
 
 var send_message = (message, channel_id, auth) => {
-    if (!auth){
+    if (!auth) {
         console.error("bad auth")
         return 0
     }
@@ -119,12 +166,13 @@ var send_message = (message, channel_id, auth) => {
 var authHeader = ''
 
 
-var port = chrome.runtime.connect({ name: "content" });
+var bg_port = chrome.runtime.connect({ name: "content" });
 var port_is_open = true;
 
 let currentPage = location.href;
 
 setInterval(function () {
+
 
     if (currentPage != location.href && location.href.includes("channels")) {
 
@@ -139,59 +187,15 @@ setInterval(function () {
             let rel_enc_message_code = enc_message_code.replace("\\n", "\n")
             if (text.includes(rel_enc_message_code)) {
                 let encrypted_text = text.replace(rel_enc_message_code, "")
-                port.postMessage({type: "dec-message", message: encrypted_text, message_id: a[i].id.replace("message-content-", ""), channel_id:get_channel_id()})
+                bg_port.postMessage({ type: "dec-message", message: encrypted_text, message_id: a[i].id.replace("message-content-", ""), channel_id: get_channel_id() })
             }
         }
     }
 }, 500);
 
+listen_for_messages()
 
-
-port.onMessage.addListener(async function (message) {
-    if (message.type === "send-message" && authHeader != '') {
-
-        send_message(message.message, get_channel_id(), authHeader)
-
-    }
-    if (message.type === "header") {
-
-        const headers = message.request.requestHeaders;
-
-        for (const header of headers) {
-            if (header.name === "Authorization" && authHeader == '') {
-                alert(`[discord-enc]: auth token found!`);
-                authHeader = header.value;
-                port.postMessage({ type: "got-auth", auth: true });
-                break;
-            }
-        }
-    }
-    if (message.type === "create-key") {
-        if (await ask_key_popup()) {
-            let export_key = async function (key) {
-                return await window.crypto.subtle.exportKey('jwk', key)
-            }
-            let keys = await create_keys();
-            console.warn(await export_key(keys.publicKey))
-            port.postMessage({
-
-                type: "key-set",
-
-                channel_id: message.channel_id,
-
-                public: await export_key(keys.publicKey),
-
-                private: await export_key(keys.privateKey)
-            });
-        }
-    }
-    if (message.type === "set-message"){
-        discord_message = document.getElementById("message-content-" + message.message_id)
-        discord_message.innerHTML = message.message
-    }
-});
-
-port.onDisconnect.addListener(function () {
+bg_port.onDisconnect.addListener(function () {
     alert("disconnected");
     port_is_open = false;
 })
