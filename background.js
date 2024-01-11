@@ -77,18 +77,24 @@ function headers_connected() {
 
     if (message.type === "dec-message") {
       let local_storage = await chrome.storage.local.get()
-      if (message.channel_id in local_storage){
+      if (message.channel_id in local_storage) {
         const private_key = local_storage[message.channel_id]["privateKey"]
-        const imported_private_key = await crypto.subtle.importKey(
-          "jwk",
-          private_key,
-          { name: "RSA-OAEP", hash: "SHA-256" },
-          true,
-          ["decrypt"]
-        )
-        const decrypted_message = await decrypt(message.message, imported_private_key)
-        
-        send_to_port("content", {type:"set-message", message_id:message.message_id, message:decrypted_message})
+        try {
+          const imported_private_key = await crypto.subtle.importKey(
+            "jwk",
+            private_key,
+            { name: "RSA-OAEP", hash: "SHA-256" },
+            true,
+            ["decrypt"]
+          )
+          const decrypted_message = await decrypt(message.message, imported_private_key)
+
+          send_to_port("content", { type: "set-message", message_id: message.message_id, message: decrypted_message, error: false })
+        } catch (error) {
+          send_to_port("content", { type: "set-message", message_id: message.message_id, message: "decryption error", error: true })
+          return 1
+        }
+
       }
 
     }

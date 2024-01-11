@@ -54,7 +54,15 @@ async function listen_for_messages() {
         }
         if (message.type === "set-message") {
             discord_message = document.getElementById("message-content-" + message.message_id)
-            discord_message.innerHTML = message.message
+            if (!message.error) {
+                discord_message.innerText = message.message
+            } else {
+                discord_message.style.color = "red";
+                discord_message.style.fontWeight = "bold";
+                discord_message.style.fontSize = "23px";
+                discord_message.style.outline = "5px solid black";
+                discord_message.innerText = message.message;
+            }
         }
     });
 }
@@ -186,8 +194,22 @@ setInterval(function () {
             text = discord_message.innerText;
             let rel_enc_message_code = enc_message_code.replace("\\n", "\n")
             if (text.includes(rel_enc_message_code)) {
-                let encrypted_text = text.replace(rel_enc_message_code, "")
-                bg_port.postMessage({ type: "dec-message", message: encrypted_text, message_id: a[i].id.replace("message-content-", ""), channel_id: get_channel_id() })
+                const encrypted_text = text.replace(rel_enc_message_code, "")
+
+                b_decrypt = document.createElement("button", { text: "test" })
+                b_decrypt.textContent = "decrypt"
+                b_decrypt.style.backgroundColor = "#7CB342"
+                b_decrypt.style.border = "solid"
+                b_decrypt.style.borderWidth = "3px"
+                discord_message = a[i];
+
+                b_decrypt.onclick = () => {
+                    bg_port.postMessage({ type: "dec-message", message: encrypted_text, message_id: a[i].id.replace("message-content-", ""), channel_id: get_channel_id() })
+                }
+
+                discord_message.appendChild(b_decrypt);
+                //let encrypted_text = text.replace(rel_enc_message_code, "")
+                //bg_port.postMessage({ type: "dec-message", message: encrypted_text, message_id: a[i].id.replace("message-content-", ""), channel_id: get_channel_id() })
             }
         }
     }
