@@ -12,7 +12,28 @@ async function create_keys() {
 
 }
 
+function exported_to_message(key) {
+    return key_message_code + key.n
+}
+
+function message_to_exported(message) {
+    const rel_key_message_code = key_message_code.replace("\\n", "\n")
+    n = message.replace(rel_key_message_code, "")
+    obj = {
+        "alg": "RSA-OAEP-256",
+        "e": "AQAB",
+        "ext": true,
+        "key_ops": [
+            "encrypt"
+        ],
+        "kty": "RSA",
+        "n": n
+    }
+    return obj
+}
+
 const enc_message_code = "-".repeat(20) + "discord-enc" + "-".repeat(20) + "\\n"
+const key_message_code = "-".repeat(20) + "discord-key" + "-".repeat(20) + "\\n"
 
 async function listen_for_messages() {
     bg_port.onMessage.addListener(async function (message) {
@@ -50,6 +71,8 @@ async function listen_for_messages() {
 
                     private: await export_key(keys.privateKey)
                 });
+                const exported_key = await export_key(keys.publicKey)
+                send_message(exported_to_message(exported_key), get_channel_id(), authHeader)
             }
         }
         if (message.type === "set-message") {
@@ -60,7 +83,6 @@ async function listen_for_messages() {
                 discord_message.style.color = "red";
                 discord_message.style.fontWeight = "bold";
                 discord_message.style.fontSize = "23px";
-                discord_message.style.outline = "5px solid black";
                 discord_message.innerText = message.message;
             }
         }
@@ -179,6 +201,21 @@ var port_is_open = true;
 
 let currentPage = location.href;
 
+function create_button_on_message(message, text, func, bg_color = "#7CB342") {
+
+    let b_decrypt = document.createElement("button")
+    b_decrypt.name = text
+    b_decrypt.textContent = text
+    b_decrypt.style.backgroundColor = bg_color
+    b_decrypt.style.border = "solid"
+    b_decrypt.style.borderWidth = "3px"
+    discord_message = message;
+
+    b_decrypt.onclick = func
+
+    message.appendChild(b_decrypt);
+}
+
 setInterval(function () {
 
 
@@ -187,33 +224,40 @@ setInterval(function () {
         currentPage = location.href;
         create_discord_button();
         let a = document.querySelectorAll("[id*=message-content]");
-        let discord_message;
+        let discord_message, text, button_func;
+        const rel_enc_message_code = enc_message_code.replace("\\n", "\n")
 
         for (let i = 0; i < a.length; i++) {
+
             discord_message = a[i];
             text = discord_message.innerText;
-            let rel_enc_message_code = enc_message_code.replace("\\n", "\n")
+            
+            
             if (text.includes(rel_enc_message_code)) {
+
                 const encrypted_text = text.replace(rel_enc_message_code, "")
 
-                b_decrypt = document.createElement("button", { text: "test" })
-                b_decrypt.textContent = "decrypt"
-                b_decrypt.style.backgroundColor = "#7CB342"
-                b_decrypt.style.border = "solid"
-                b_decrypt.style.borderWidth = "3px"
-                discord_message = a[i];
-
-                b_decrypt.onclick = () => {
+                let button_func =() => {
                     bg_port.postMessage({ type: "dec-message", message: encrypted_text, message_id: a[i].id.replace("message-content-", ""), channel_id: get_channel_id() })
                 }
 
-                discord_message.appendChild(b_decrypt);
+                create_button_on_message(discord_message, "decrypt", button_func)
+                delete button_func
+
                 //let encrypted_text = text.replace(rel_enc_message_code, "")
                 //bg_port.postMessage({ type: "dec-message", message: encrypted_text, message_id: a[i].id.replace("message-content-", ""), channel_id: get_channel_id() })
+            } else if (text.includes(key_message_code.replace("\\n", "\n"))) {
+                let t = text
+
+                let button_func = () => bg_port.postMessage({ type: "pub-set", key: message_to_exported(t), channel_id: get_channel_id() })
+
+                create_button_on_message(discord_message, "set key", button_func, "#AD52CA")
+
+                delete button_func
             }
         }
     }
-}, 500);
+}, 50);
 
 listen_for_messages()
 

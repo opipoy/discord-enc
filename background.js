@@ -75,8 +75,16 @@ function headers_connected() {
       chrome.storage.local.set({ [message.channel_id]: { "publicKey": message.public, "privateKey": message.private } });
     }
 
+    if (message.type === "pub-set"){
+      chrome.storage.local.set({ [message.channel_id]: { "publicKey": message.key} });
+    }
+
     if (message.type === "dec-message") {
       let local_storage = await chrome.storage.local.get()
+      if (!("privateKey" in local_storage[message.channel_id])){
+        send_to_port("content", { type: "set-message", message_id: message.message_id, message: "permission error", error: true })
+        return 1
+      }
       if (message.channel_id in local_storage) {
         const private_key = local_storage[message.channel_id]["privateKey"]
         try {
@@ -88,7 +96,6 @@ function headers_connected() {
             ["decrypt"]
           )
           const decrypted_message = await decrypt(message.message, imported_private_key)
-
           send_to_port("content", { type: "set-message", message_id: message.message_id, message: decrypted_message, error: false })
         } catch (error) {
           send_to_port("content", { type: "set-message", message_id: message.message_id, message: "decryption error", error: true })
