@@ -14,7 +14,8 @@
     {
       "resources": [
         "enc_popup.html",
-        "enc-icon.svg"
+        "enc-icon.svg",
+        "resorces/api.js"
       ],
       "matches": [
         "https://*.discord.com/*"

@@ -51,7 +51,8 @@ function headers_connected() {
       let local_storage = await chrome.storage.local.get()
 
       if (message.channel_id in local_storage) {
-
+        
+        //get key
         let pub_key = local_storage[message.channel_id]["publicKey"]
         const imported_pub_key = await crypto.subtle.importKey(
           "jwk",
@@ -118,15 +119,14 @@ function headers_connected() {
 }
 
 function popup_connected() {
+    if (auth) {
+        send_to_port("popup", { type: "set_auth", auth: true });
+    }
   ports["popup"].onMessage.addListener(function (message) {
     if ("message" in message) {// && "channel_id" in message) {
       send_to_port("content", { type: "message", message: message.message, channel_id: "1152252579389120554" })
     }
-
   });
-  if (auth) {
-    send_to_port("popup", { type: "set_auth", auth: true });
-  }
 }
 
 

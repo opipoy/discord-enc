@@ -1,23 +1,40 @@
-var button = document.getElementById("button");
-var input = document.getElementById("message_input");
-var extention = document.getElementById("extention");
-chrome.storage.session.get(["popup_visibility"]).then((r) =>{
-if (Object.keys(r).length === 0){
-    extention.style.visibility = "hidden"
-} else {
-    extention.style.visibility = "visible"
+function make_list(args){// Sample data arra
+// Sample data array (replace with your actual data)
+const data = args
+
+// Function to create list item elements
+function createListItem(item) {
+  const listItem = document.createElement("li");
+  listItem.classList.add("object-item");
+
+  const itemName = document.createElement("h3");
+  itemName.textContent = item.name;
+  listItem.appendChild(itemName);
+
+  const itemDescription = document.createElement("p");
+  itemDescription.textContent = item.description;
+  listItem.appendChild(itemDescription);
+
+  return listItem;
 }
-})
+
+// Populate the list with items
+const objectList = document.getElementById("object-list");
+data.forEach(item => {
+  const listItem = createListItem(item);
+  objectList.appendChild(listItem);
+});
+
+// Set container size and add scrollbar
+const objectContainer = document.getElementById("object-container");
+objectContainer.style.width = "400px"; // Adjust width as needed
+objectContainer.style.height = "300px"; // Adjust height as needed
+objectContainer.style.overflowY = "auto";
+}
 var port = chrome.runtime.connect({name: "popup"});
 port.onMessage.addListener(function (message) {
     if (message.type === "set_auth", message.auth){
-        extention.style.visibility = "visible"
-        chrome.storage.session.set({popup_visibility: true})
+        make_list([{name: "hello", description:"test"}])
     }
 });
 
-button.onclick = () => {
-    if (extention.style.visibility === "visible"){
-        port.postMessage({message: input.value});
-    }
-}

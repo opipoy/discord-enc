@@ -1,39 +1,46 @@
-body {
-    background-color: rgb(49, 49, 49);
+body{
+ height:500px;
+ background-color:#290047;
+}
+#object-container {
+  border: 10px solid #000;
+  border-radius: 5px;
+  padding: 10px;
+  margin: 0 auto; /* Center the container horizontally */
+  background-color : #011d34;
 }
 
-h1 {
-    font-family: "Sans-serif";
-    font-weight: bold;
-    color: white;
+#object-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
-.b_holder{
-    margin-top: 3cm;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+.object-item {
+  border-bottom: 1px solid #ddd;
+  padding: 10px;
 }
 
-#message_input {
-    border: solid;
-    border-color: grey;
-    align-self: center;
+.object-item h3 {
+  margin: 0;
+  font-weight: bold;
 }
 
-.b_holder > button{
-    background-color: #df4343;
-    font-weight: bold;
-    font-size: 1cm;
-    border: solid;
-    border-width: 5px;
-    border-radius: 30px;
-    border-color: rgb(255, 255, 255);
-    width: 6cm;
-    height: 3cm;
+.object-item p {
+  margin-top: 5px;
 }
 
-.b_holder > button:hover{
-    background-color:#632323;
+/* Customize colors and styles here */
+.object-item {
+  background-color: #5a0896;
+  color: #333;
+}
+
+.object-item h3 {
+  color: #000;
+}
+
+.object-item p {
+  color: #fff;
 }
 
