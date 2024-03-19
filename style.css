@@ -1,46 +1,97 @@
+/* pallet (from dark to light):
+ * TODO fill this*/
+:root {
+    --col-1: #37263D;
+    --col-2: #484365;
+    --col-3: #796166;
+    --col-4: #BF767A;
+    --col-5: #E2A875;
+}
 body{
- height:500px;
- background-color:#290047;
+    height:500px;
+    width:450px;
+    background-color:#BF767A;
 }
 #object-container {
-  border: 10px solid #000;
-  border-radius: 5px;
-  padding: 10px;
-  margin: 0 auto; /* Center the container horizontally */
-  background-color : #011d34;
+    visibility: collapse;
+    border: 10px solid #000;
+    border-radius: 3px;
+    padding: 10px;
+    margin: 0 auto; /* Center the container horizontally */
+    background-color : var(--col-1);
 }
 
 #object-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+    border-radius: 9px;
+    list-style: none;
+    padding: 10px;
+    margin: 0;
+    background-color : var(--col-2);
 }
 
 .object-item {
-  border-bottom: 1px solid #ddd;
-  padding: 10px;
+    border-bottom: 1px solid #ddd;
+    padding: 10px;
 }
 
-.object-item h3 {
-  margin: 0;
-  font-weight: bold;
+.object-item h2 {
+    margin: 0;
+    color: #000;
+    font-weight: bold;
 }
 
 .object-item p {
-  margin-top: 5px;
+    margin-top: 5px;
+    color: #fff;
 }
 
 /* Customize colors and styles here */
 .object-item {
-  background-color: #5a0896;
-  color: #333;
+    background-color: var(--col-2);
+    color: #333;
+}
+.object-item button {
+    border-radius : 4px;
+    background: rgba(0,0,0,0);
+    border: none;
 }
 
-.object-item h3 {
-  color: #000;
+.object-item button:hover {
+    background: rgba(0,0,0,0.5);
+    transition: background 0.1s;
 }
 
-.object-item p {
-  color: #fff;
+#warning-popup {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
+#warning-popup .popup-content{
+    width: 150px;
+    background-color: var(--col-1);
+    border: solid #fff 5px;
+    padding: 0px;
+    border-radius: 5px;
+    justify-content: center;
+    text-align: center;
+}
+
+#warning-popup h3 {
+ color:red;
+}
+
+#warning-popup button {
+    padding: 4px;
+    font-weight: bold;
+    border: solid 3px var(--col-3);
+    border-radius: 2px;
+    background: var(--col-4);
+}

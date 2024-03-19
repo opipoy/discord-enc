@@ -1,6 +1,11 @@
 var auth = false;
 var ports = {};
 const enc_message_code = "-".repeat(20) + "discord-enc" + "-".repeat(20) + "\\n"
+//local storage
+var local_storage = {}
+chrome.storage.local.onChanged.addListener(async () => {
+    local_storage = await chrome.storage.local.get();
+})
 
 
 async function encrypt(text, publicKey) {
@@ -36,10 +41,11 @@ async function decrypt(encryptedData64, privateKey) {
 
 
 var send_to_port = function (port_id, message) {
-  ports[port_id].postMessage(message);
+  return ports[port_id].postMessage(message);
 }
 
-function headers_connected() {
+async function headers_connected() {
+    local_storage = await chrome.storage.local.get()
   ports["content"].onMessage.addListener(async function (message) {
 
     if (message.type === "got-auth" && message.auth) {
@@ -48,9 +54,12 @@ function headers_connected() {
 
     if (message.type === "b_click") {
 
-      let local_storage = await chrome.storage.local.get()
+      
 
-      if (message.channel_id in local_storage) {
+      if (message.channel_id in local_storage && "privateKey" in local_storage[message.channel_id]) {
+        
+        const messages = local_storage[message.channel_id]["messages"]
+        messages
         
         //get key
         let pub_key = local_storage[message.channel_id]["publicKey"]
@@ -63,26 +72,35 @@ function headers_connected() {
         )
 
         encrypted_mesage = await encrypt(message.message, imported_pub_key)
-        send_to_port("content", { type: "send-message", message: enc_message_code + encrypted_mesage })
+        send_to_port("content", { type: "send-message", message: enc_message_code + encrypted_mesage, real_msg : message.message })
 
       } else {
         send_to_port("content", { type: "create-key", channel_id: message.channel_id })
-
       }
 
     }
 
     if (message.type === "key-set") {
-      chrome.storage.local.set({ [message.channel_id]: { "publicKey": message.public, "privateKey": message.private } });
+        let stored_on_channel = (await chrome.storage.local.get())[message.channel_id]
+        stored_on_channel = {};
+        stored_on_channel["ownedPublicKey"] = message.public;
+        stored_on_channel["privateKey"] = message.private;
+        stored_on_channel["Messages"] = {} ;
+        local_storage[message.channel_id] = stored_on_channel;
+        chrome.storage.local.set(local_storage);
     }
 
     if (message.type === "pub-set"){
-      chrome.storage.local.set({ [message.channel_id]: { "publicKey": message.key} });
+        let stored_on_channel = (await chrome.storage.local.get())[message.channel_id]
+        stored_on_channel["publicKey"] = message.key;
+        local_storage[message.channel_id] = stored_on_channel
+        console.log(local_storage)
+        chrome.storage.local.set(local_storage);
     }
 
     if (message.type === "dec-message") {
-      let local_storage = await chrome.storage.local.get()
-      if (!("privateKey" in local_storage[message.channel_id])){
+      
+      if (message.channel_id in local_storage && !("privateKey" in local_storage[message.channel_id])){
         send_to_port("content", { type: "set-message", message_id: message.message_id, message: "permission error", error: true })
         return 1
       }
@@ -106,6 +124,10 @@ function headers_connected() {
       }
 
     }
+    if (message.type === "save_message"){
+        local_storage[message.name]["Messages"][message.id] = {message: message.message, name: message.name}
+        chrome.storage.local.set(local_storage)
+    }
   });
   chrome.webRequest.onSendHeaders.addListener(
     (details) => {
@@ -120,12 +142,13 @@ function headers_connected() {
 
 function popup_connected() {
     if (auth) {
-        send_to_port("popup", { type: "set_auth", auth: true });
+        console.log("sending authheader")
+        send_to_port("popup", { type: "set_auth"});
     }
   ports["popup"].onMessage.addListener(function (message) {
-    if ("message" in message) {// && "channel_id" in message) {
-      send_to_port("content", { type: "message", message: message.message, channel_id: "1152252579389120554" })
-    }
+    //if ("message" in message) {// && "channel_id" in message) {
+    //  send_to_port("content", { type: "message", message: message.message, channel_id: "1152252579389120554" })
+    //}
   });
 }
 

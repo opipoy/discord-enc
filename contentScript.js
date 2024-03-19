@@ -4,8 +4,10 @@
     const contentMain = await import(src);
 
     // const discord_api = await require(src);
-    api = contentMain.api
+    api = contentMain.api;
     // testing api
+
+    var curr_usr;
 
     async function create_keys() {
         let keys = await window.crypto.subtle.generateKey(
@@ -42,13 +44,14 @@
     }
 
     const enc_message_code = "-".repeat(20) + "discord-enc" + "-".repeat(20) + "\\n"
-    const key_message_code = "-".repeat(20) + "discord-key" + "-".repeat(20) + "\\n"
+    const key_message_code = "-".repeat(20) + "discord-key" + "-".repeat(20) + "\n"
 
     async function listen_for_messages() {
-        bg_port.onMessage.addListener(async function (message) {
+        bg_port.onMessage.addListener(async function (message, sender, sendResponce) {
             if (message.type === "send-message" && api.getConfig().authHeader != '') {
 
-                api.sendMessage(get_channel_id(), message.message)
+                const output_message = await api.sendMessage(get_channel_id(), message.message)
+                bg_port.postMessage({type:"save_message", id:output_message.id, name:output_message.channel_id, message:message.real_msg})
 
             }
             if (message.type === "header") {
@@ -60,6 +63,7 @@
                         alert(`[discord-enc]: auth token found!`);
                         api.setConfigAuthHeader(header.value);
                         bg_port.postMessage({ type: "got-auth", auth: true });
+                        curr_usr = await api.getCurrentUser();
                         break;
                     }
                 }
@@ -81,7 +85,10 @@
                         private: await export_key(keys.privateKey)
                     });
                     const exported_key = await export_key(keys.publicKey)
-                    api.sendMessage(exported_to_message(exported_key), get_channel_id(), authHeader)
+                    api.sendMessage(get_channel_id(), exported_to_message(exported_key))
+
+
+
                 }
             }
             if (message.type === "set-message") {
@@ -225,38 +232,43 @@
         message.appendChild(b_decrypt);
     }
 
-    function reload() {
+    async function reload() {
 
         create_discord_button();
-        let messages = document.querySelectorAll("[id*=message-content]");
         let text;
         const rel_enc_message_code = enc_message_code.replace("\\n", "\n")
         if (location.href.includes("channels")) {
+            let messages = await api.getMessages(get_channel_id(), 50)
             messages.forEach(function (discord_message) {
+                if (discord_message.author.id === curr_usr.id){
+                    bg_port.postMessage({type:"msg-load",id:discord_message.id})
+                    return
+                }
+
 
                 //discord_message = a[i];
-                text = '' //discord_message.innerText;
+                text = discord_message.content //discord_message.innerText;
+                let message_element = document.getElementById("message-content-" + discord_message.id)
 
 
-                if (text.includes(rel_enc_message_code)) {
+                if (text.includes(rel_enc_message_code.replace("\\n", "\n")) && messages) {
 
                     const encrypted_text = text.replace(rel_enc_message_code, "")
 
                     let button_func = () => {
-                        bg_port.postMessage({ type: "dec-message", message: encrypted_text, message_id: a[i].id.replace("message-content-", ""), channel_id: get_channel_id() })
+                        bg_port.postMessage({ type: "dec-message", message: encrypted_text, message_id: discord_message.id, channel_id: discord_message.channel_id })
                     }
 
-                    create_button_on_message(discord_message, "decrypt", button_func)
+
+                    create_button_on_message(message_element, "decrypt", button_func)
                     delete button_func
 
-                    //let encrypted_text = text.replace(rel_enc_message_code, "")
-                    //bg_port.postMessage({ type: "dec-message", message: encrypted_text, message_id: a[i].id.replace("message-content-", ""), channel_id: get_channel_id() })
-                } else if (text.includes(key_message_code.replace("\\n", "\n"))) {
+                } else if (text.includes(key_message_code.replace("\\n", "\n")) && messages) {
                     let t = text
 
                     let button_func = () => bg_port.postMessage({ type: "pub-set", key: message_to_exported(t), channel_id: get_channel_id() })
 
-                    create_button_on_message(discord_message, "set key", button_func, "#AD52CA")
+                    create_button_on_message(message_element, "set key", button_func, "#AD52CA")
 
                     delete button_func
                 }
