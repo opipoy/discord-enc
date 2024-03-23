@@ -1,6 +1,6 @@
 (async () => {
     const src = chrome.runtime.getURL("./resorces/api.js")
-    
+
     const contentMain = await import(src);
 
     // const discord_api = await require(src);
@@ -47,7 +47,7 @@
     const key_message_code = "-".repeat(20) + "discord-key" + "-".repeat(20) + "\n"
 
     async function listen_for_messages() {
-        bg_port.onMessage.addListener(async function (message, sender, sendResponce) {
+        bg_port.onMessage.addListener(async function (message) {
             if (message.type === "send-message" && api.getConfig().authHeader != '') {
 
                 const output_message = await api.sendMessage(get_channel_id(), message.message)
@@ -187,27 +187,27 @@
         }
     }
 
-//    var api.sendMessage = (message, channel_id, auth) => {
-//        if (!auth) {
-//            console.error("bad auth")
-//            return 0
-//        }
-//
-//        const fetchOptions = {
-//            "body": `{"content":"` + message.normalize() + `","tts":false}`,
-//            "method": "POST",
-//            "headers": {
-//                "Accept": "*/*",
-//                "Accept-Language": "en-US",
-//                "Authorization": auth,
-//                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) discord/1.0.9015 Chrome/108.0.5359.215 Electron/22.3.12 Safari/537.36",
-//                "X-Super-Properties": "eyJvcyI6IldpbmRvd3MiLCJicm93c2VyIjoiRGlzY29yZCBDbGllbnQiLCJyZWxlYXNlX2NoYW5uZWwiOiJzdGFibGUiLCJjbGllbnRfdmVyc2lvbiI6IjEuMC45MDE1Iiwib3NfdmVyc2lvbiI6IjEwLjAuMjI2MjEiLCJvc19hcmNoIjoieDY0Iiwic3lzdGVtX2xvY2FsZSI6ImVuLVVTIiwiYnJvd3Nlcl91c2VyX2FnZW50IjoiTW96aWxsYS81LjAgKFdpbmRvd3MgTlQgMTAuMDsgV09XNjQpIEFwcGxlV2ViS2l0LzUzNy4zNiAoS0hUTUwsIGxpa2UgR2Vja28pIGRpc2NvcmQvMS4wLjkwMTUgQ2hyb21lLzEwOC4wLjUzNTkuMjE1IEVsZWN0cm9uLzIyLjMuMTIgU2FmYXJpLzUzNy4zNiIsImJyb3dzZXJfdmVyc2lvbiI6IjIyLjMuMTIiLCJjbGllbnRfYnVpbGRfbnVtYmVyIjoyMTYzODUsIm5hdGl2ZV9idWlsZF9udW1iZXIiOjM0ODk4LCJjbGllbnRfZXZlbnRfc291cmNlIjpudWxsfQ==",
-//                "Content-Type": "application/json"
-//            }
-//
-//        };
-//        fetch(`https://discord.com/api/v9/channels/${channel_id}/messages`, fetchOptions)
-//    }
+    //    var api.sendMessage = (message, channel_id, auth) => {
+        //        if (!auth) {
+            //            console.error("bad auth")
+            //            return 0
+            //        }
+        //
+            //        const fetchOptions = {
+                //            "body": `{"content":"` + message.normalize() + `","tts":false}`,
+                //            "method": "POST",
+                //            "headers": {
+                    //                "Accept": "*/*",
+                    //                "Accept-Language": "en-US",
+                    //                "Authorization": auth,
+                    //                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) discord/1.0.9015 Chrome/108.0.5359.215 Electron/22.3.12 Safari/537.36",
+                    //                "X-Super-Properties": "eyJvcyI6IldpbmRvd3MiLCJicm93c2VyIjoiRGlzY29yZCBDbGllbnQiLCJyZWxlYXNlX2NoYW5uZWwiOiJzdGFibGUiLCJjbGllbnRfdmVyc2lvbiI6IjEuMC45MDE1Iiwib3NfdmVyc2lvbiI6IjEwLjAuMjI2MjEiLCJvc19hcmNoIjoieDY0Iiwic3lzdGVtX2xvY2FsZSI6ImVuLVVTIiwiYnJvd3Nlcl91c2VyX2FnZW50IjoiTW96aWxsYS81LjAgKFdpbmRvd3MgTlQgMTAuMDsgV09XNjQpIEFwcGxlV2ViS2l0LzUzNy4zNiAoS0hUTUwsIGxpa2UgR2Vja28pIGRpc2NvcmQvMS4wLjkwMTUgQ2hyb21lLzEwOC4wLjUzNTkuMjE1IEVsZWN0cm9uLzIyLjMuMTIgU2FmYXJpLzUzNy4zNiIsImJyb3dzZXJfdmVyc2lvbiI6IjIyLjMuMTIiLCJjbGllbnRfYnVpbGRfbnVtYmVyIjoyMTYzODUsIm5hdGl2ZV9idWlsZF9udW1iZXIiOjM0ODk4LCJjbGllbnRfZXZlbnRfc291cmNlIjpudWxsfQ==",
+                    //                "Content-Type": "application/json"
+                    //            }
+                //
+                //        };
+        //        fetch(`https://discord.com/api/v9/channels/${channel_id}/messages`, fetchOptions)
+        //    }
 
     var authHeader = ''
 
@@ -234,15 +234,15 @@
 
     async function reload() {
 
-        create_discord_button();
         let text;
         const rel_enc_message_code = enc_message_code.replace("\\n", "\n")
-        if (location.href.includes("channels")) {
+        if (currentPage.includes("channels")) {
+            create_discord_button();
             let messages = await api.getMessages(get_channel_id(), 50)
             // PERF: mabe sending the messages as a list would be faster then sending it like this
             // TODO: check what will be faster
             messages.forEach(function (discord_message) {
-                if (discord_message.author.id === curr_usr.id){
+                if (discord_message.author.id === curr_usr.id && discord_message.content.includes(enc_message_code)){
                     bg_port.postMessage({type:"msg-load", id:discord_message.id, channel_id: get_channel_id()})
                     return
                 }
@@ -280,7 +280,7 @@
 
 
     setInterval(function () {
-        if (currentPage != location.href) {
+        if (currentPage !== location.href) {
             currentPage = location.href;
             reload()
         }
@@ -289,7 +289,7 @@
     listen_for_messages()
 
     bg_port.onDisconnect.addListener(function () {
-        alert("disconnected");
+        console.warn("background disconnected")
         port_is_open = false;
     })
 })();
