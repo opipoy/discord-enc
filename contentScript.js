@@ -239,9 +239,11 @@
         const rel_enc_message_code = enc_message_code.replace("\\n", "\n")
         if (location.href.includes("channels")) {
             let messages = await api.getMessages(get_channel_id(), 50)
+            // PERF: mabe sending the messages as a list would be faster then sending it like this
+            // TODO: check what will be faster
             messages.forEach(function (discord_message) {
                 if (discord_message.author.id === curr_usr.id){
-                    bg_port.postMessage({type:"msg-load",id:discord_message.id})
+                    bg_port.postMessage({type:"msg-load", id:discord_message.id, channel_id: get_channel_id()})
                     return
                 }
 
@@ -291,3 +293,4 @@
         port_is_open = false;
     })
 })();
+
