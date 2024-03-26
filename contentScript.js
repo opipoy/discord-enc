@@ -242,37 +242,43 @@
             // PERF: mabe sending the messages as a list would be faster then sending it like this
             // TODO: check what will be faster
             messages.forEach(function (discord_message) {
-                if (discord_message.author.id === curr_usr.id && discord_message.content.includes(enc_message_code)){
-                    bg_port.postMessage({type:"msg-load", id:discord_message.id, channel_id: get_channel_id()})
-                    return
-                }
-
-
-                //discord_message = a[i];
-                text = discord_message.content //discord_message.innerText;
-                let message_element = document.getElementById("message-content-" + discord_message.id)
-
-
-                if (text.includes(rel_enc_message_code.replace("\\n", "\n")) && messages) {
-
-                    const encrypted_text = text.replace(rel_enc_message_code, "")
-
-                    let button_func = () => {
-                        bg_port.postMessage({ type: "dec-message", message: encrypted_text, message_id: discord_message.id, channel_id: discord_message.channel_id })
+                // if sender is you
+                if (discord_message.author.id === curr_usr.id ){
+                    if (discord_message.content.includes(enc_message_code)){
+                        bg_port.postMessage({type:"msg-load", id:discord_message.id, channel_id: get_channel_id()})
                     }
+                    if (discord_message.content.includes(key_message_code)){
+                        discord_message = document.getElementById("message-content-" + discord_message.id)
+                        discord_message.innerText = "Your Encryption key... 🔑"
+                        discord_message.style.fontWeight = "bold";
+                    }
+                } else {
+                    //discord_message = a[i];
+                    text = discord_message.content //discord_message.innerText;
+                    let message_element = document.getElementById("message-content-" + discord_message.id)
 
 
-                    create_button_on_message(message_element, "decrypt", button_func)
-                    delete button_func
+                    if (text.includes(enc_message_code)) {
 
-                } else if (text.includes(key_message_code.replace("\\n", "\n")) && messages) {
-                    let t = text
+                        const encrypted_text = text.replace(rel_enc_message_code, "")
 
-                    let button_func = () => bg_port.postMessage({ type: "pub-set", key: message_to_exported(t), channel_id: get_channel_id() })
+                        let button_func = () => {
+                            bg_port.postMessage({ type: "dec-message", message: encrypted_text, message_id: discord_message.id, channel_id: discord_message.channel_id })
+                        }
 
-                    create_button_on_message(message_element, "set key", button_func, "#AD52CA")
 
-                    delete button_func
+                        create_button_on_message(message_element, "decrypt", button_func)
+                        delete button_func
+
+                    } else if (text.includes(key_message_code.replace("\\n", "\n")) && messages) {
+                        let t = text
+
+                        let button_func = () => bg_port.postMessage({ type: "pub-set", key: message_to_exported(t), channel_id: get_channel_id() })
+
+                        create_button_on_message(message_element, "set key", button_func, "#AD52CA")
+
+                        delete button_func
+                    }
                 }
             })
         }
