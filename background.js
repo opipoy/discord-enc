@@ -74,6 +74,7 @@ var send_to_port = function (port_id, message) {
                 if (message.channel_id in local_storage && "privateKey" in local_storage[message.channel_id]) {
                     // TODO: handle error here if key hasnt been set.
                         //get key
+                    if (message.channel_is in local_storage){send_to_port("content", {type: "create-key", channel_id: message.channel_id}); return 0}
                     let pub_key = local_storage[message.channel_id]["publicKey"]
                     const imported_pub_key = await crypto.subtle.importKey(
                         "jwk",
@@ -173,7 +174,6 @@ var send_to_port = function (port_id, message) {
                     let messages_list = local_storage[message.channel_id]["Messages"][message.id]
 
                     if (typeof messages_list === "undefined"){
-                        // TODO: test if message includes the ..--discord-enc--.. key
                         send_to_port("content", { type: "set-message", message_id:message.id, message: "ERR: not found message, mabe is texting to another user or key has been forgotten", error: true}
                         )
                         return 

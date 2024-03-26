@@ -218,6 +218,7 @@
     let currentPage = location.href;
 
     function create_button_on_message(message, text, func, bg_color = "#7CB342") {
+        // TODO: make the button transperent so it will look more modern
 
         let b_decrypt = document.createElement("button")
         b_decrypt.name = text
@@ -256,9 +257,11 @@
                     //discord_message = a[i];
                     text = discord_message.content //discord_message.innerText;
                     let message_element = document.getElementById("message-content-" + discord_message.id)
-
+                    // TODO: add an option to show plain text
 
                     if (text.includes(enc_message_code)) {
+                        message_element.style.fontWeight = "bold"
+                        message_element.textContent = "encrypted message had been sent: "
 
                         const encrypted_text = text.replace(rel_enc_message_code, "")
 
@@ -271,7 +274,10 @@
                         delete button_func
 
                     } else if (text.includes(key_message_code.replace("\\n", "\n")) && messages) {
+                        message_element.style.fontWeight = "bold"
                         let t = text
+
+                        message_element.textContent = "the user had sent you a key: "
 
                         let button_func = () => bg_port.postMessage({ type: "pub-set", key: message_to_exported(t), channel_id: get_channel_id() })
 
