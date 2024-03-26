@@ -144,7 +144,7 @@ var send_to_port = function (port_id, message) {
                             true,
                             ["decrypt"]
                         )
-                        const decrypted_message = await decrypt(message.message, imported_private_key)
+                        const decrypted_message = await decrypt(message.message.replace(enc_message_code, ""), imported_private_key)
                         send_to_port("content", { type: "set-message", message_id: message.message_id, message: decrypted_message, error: false }
                         )
                     }
