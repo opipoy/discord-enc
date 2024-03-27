@@ -63,12 +63,6 @@ var send_to_port = function (port_id, message) {
         local_storage = await chrome.storage.local.get()
         ports["content"].onMessage.addListener(async function (message) {
 
-            if (message.type === "got-auth" && message.auth) {
-                auth = true
-                return 
-            }
-
-
             if (message.type === "b_click") {
 
                 if (message.channel_id in local_storage && "privateKey" in local_storage[message.channel_id]) {
@@ -192,14 +186,22 @@ var send_to_port = function (port_id, message) {
 
 
         function listen_for_auth(){
-            chrome.webRequest.onSendHeaders.addListener(
-                (details) => {
+            var listener = chrome.webRequest.onSendHeaders.addListener(
+                async (details) => {
                     if (!auth) {
-                        send_to_port("content", { type: "header", request: details }
-                        );
+                        const headers = details.requestHeaders;
+
+                        for (const header of headers) {
+                            if (header.name === "Authorization") {
+                                send_to_port("content", { type: "auth-set", auth: header.value});
+                                auth = true;
+                                break;
+                            }
+                        }
+
                     }
                     else {
-                        auth = true;
+                        chrome.webRequest.onSendHeaders.removeListener(listener);
                     }
 
                 }

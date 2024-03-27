@@ -54,20 +54,13 @@
                 bg_port.postMessage({type:"save_message", id:output_message.id, name:output_message.channel_id, message:message.real_msg})
 
             }
-            if (message.type === "header") {
+            if (message.type === "auth-set") {
+                // HACK: mabe there is another, safer way...
+                api.setConfigAuthHeader(message.auth);
+                curr_usr = await api.getCurrentUser();
 
-                const headers = message.request.requestHeaders;
-
-                for (const header of headers) {
-                    if (header.name === "Authorization" && authHeader == '') {
-                        alert(`[discord-enc]: auth token found!`);
-                        api.setConfigAuthHeader(header.value);
-                        bg_port.postMessage({ type: "got-auth", auth: true });
-                        curr_usr = await api.getCurrentUser();
-                        break;
-                    }
-                }
             }
+
             if (message.type === "create-key") {
                 if (await ask_key_popup()) {
                     let export_key = async function (key) {
@@ -157,7 +150,6 @@
     function create_discord_button() {
         try {
             if (!port_is_open) {
-                alert("reconnecting...")
                 bg_port = chrome.runtime.connect({ name: "content" });
                 listen_for_messages()
                 port_is_open = true
@@ -187,30 +179,6 @@
         }
     }
 
-    //    var api.sendMessage = (message, channel_id, auth) => {
-        //        if (!auth) {
-            //            console.error("bad auth")
-            //            return 0
-            //        }
-        //
-            //        const fetchOptions = {
-                //            "body": `{"content":"` + message.normalize() + `","tts":false}`,
-                //            "method": "POST",
-                //            "headers": {
-                    //                "Accept": "*/*",
-                    //                "Accept-Language": "en-US",
-                    //                "Authorization": auth,
-                    //                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) discord/1.0.9015 Chrome/108.0.5359.215 Electron/22.3.12 Safari/537.36",
-                    //                "X-Super-Properties": "eyJvcyI6IldpbmRvd3MiLCJicm93c2VyIjoiRGlzY29yZCBDbGllbnQiLCJyZWxlYXNlX2NoYW5uZWwiOiJzdGFibGUiLCJjbGllbnRfdmVyc2lvbiI6IjEuMC45MDE1Iiwib3NfdmVyc2lvbiI6IjEwLjAuMjI2MjEiLCJvc19hcmNoIjoieDY0Iiwic3lzdGVtX2xvY2FsZSI6ImVuLVVTIiwiYnJvd3Nlcl91c2VyX2FnZW50IjoiTW96aWxsYS81LjAgKFdpbmRvd3MgTlQgMTAuMDsgV09XNjQpIEFwcGxlV2ViS2l0LzUzNy4zNiAoS0hUTUwsIGxpa2UgR2Vja28pIGRpc2NvcmQvMS4wLjkwMTUgQ2hyb21lLzEwOC4wLjUzNTkuMjE1IEVsZWN0cm9uLzIyLjMuMTIgU2FmYXJpLzUzNy4zNiIsImJyb3dzZXJfdmVyc2lvbiI6IjIyLjMuMTIiLCJjbGllbnRfYnVpbGRfbnVtYmVyIjoyMTYzODUsIm5hdGl2ZV9idWlsZF9udW1iZXIiOjM0ODk4LCJjbGllbnRfZXZlbnRfc291cmNlIjpudWxsfQ==",
-                    //                "Content-Type": "application/json"
-                    //            }
-                //
-                //        };
-        //        fetch(`https://discord.com/api/v9/channels/${channel_id}/messages`, fetchOptions)
-        //    }
-
-    var authHeader = ''
-
 
     var bg_port = chrome.runtime.connect({ name: "content" });
     var port_is_open = true;
@@ -233,7 +201,11 @@
         message.appendChild(b_decrypt);
     }
 
-    async function reload() {
+    async function reload(){
+        
+    }
+
+    async function on_url_change() {
 
         let text;
         const rel_enc_message_code = enc_message_code.replace("\\n", "\n")
@@ -279,7 +251,10 @@
 
                         message_element.textContent = "the user had sent you a key: "
 
-                        let button_func = () => bg_port.postMessage({ type: "pub-set", key: message_to_exported(t), channel_id: get_channel_id() })
+                        let button_func = () => {
+                            bg_port.postMessage({ type: "pub-set", key: message_to_exported(t), channel_id: get_channel_id() })
+                            alert("[discord-enc]: your auth key has been set")
+                        }
 
                         create_button_on_message(message_element, "set key", button_func, "#AD52CA")
 
@@ -294,9 +269,10 @@
     setInterval(function () {
         if (currentPage !== location.href) {
             currentPage = location.href;
-            reload()
+            on_url_change()
         }
-    }, 50);
+        reload()
+    }, 500);
 
     listen_for_messages()
 
