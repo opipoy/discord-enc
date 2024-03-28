@@ -1,0 +1,12 @@
+.b_on_message{
+  border: none;
+  border-radius: 3px;
+  background-color: rgba(0,0,0,0.3);
+  padding: 7px;
+  font-weight: bold;
+  color: #fff;
+  margin-left: 5px;
+}
+.b_on_message:hover{
+  background-color: rgba(0,0,0,0.5);
+}
