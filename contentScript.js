@@ -98,7 +98,7 @@
         });
     }
 
-    async function ask_key_popup(buttons) {
+    async function ask_key_popup() {
         return new Promise(async (resolve) => {
             var div = document.createElement("div");
 
@@ -190,10 +190,9 @@
 
         let b_decrypt = document.createElement("button")
         b_decrypt.name = text
+        b_decrypt.className = "b_on_message"
         b_decrypt.textContent = text
-        b_decrypt.style.backgroundColor = bg_color
-        b_decrypt.style.border = "solid"
-        b_decrypt.style.borderWidth = "3px"
+        b_decrypt.style.color = bg_color
         discord_message = message;
 
         b_decrypt.onclick = func
@@ -229,34 +228,43 @@
                     //discord_message = a[i];
                     text = discord_message.content //discord_message.innerText;
                     let message_element = document.getElementById("message-content-" + discord_message.id)
-                    // TODO: add an option to show plain text
+                    message_element.textContent = ""
+                    let textHolder = document.createElement("p")
+                    textHolder.style.fontWeight = "bold"
+                    message_element.appendChild(textHolder)
 
                     if (text.includes(enc_message_code)) {
-                        message_element.style.fontWeight = "bold"
-                        message_element.textContent = "encrypted message had been sent: "
+                        textHolder.textContent = "encrypted message had been sent: "
 
                         const encrypted_text = text.replace(rel_enc_message_code, "")
 
-                        let button_func = () => {
+                        let decrypt_func = () => {
                             bg_port.postMessage({ type: "dec-message", message: encrypted_text, message_id: discord_message.id, channel_id: discord_message.channel_id })
                         }
 
+                        let show_message = () => {
+                            message_element.innerText = encrypted_text;
+                        }
 
-                        create_button_on_message(message_element, "decrypt", button_func)
+                        create_button_on_message(message_element, "decrypt", decrypt_func)
+                        create_button_on_message(message_element, "show message", show_message, color="#fff")
                         delete button_func
 
                     } else if (text.includes(key_message_code.replace("\\n", "\n")) && messages) {
-                        message_element.style.fontWeight = "bold"
-                        let t = text
-
-                        message_element.textContent = "the user had sent you a key: "
+                        const t = text
+                        
+                        textHolder.textContent = "the user had sent you a key: "
 
                         let button_func = () => {
                             bg_port.postMessage({ type: "pub-set", key: message_to_exported(t), channel_id: get_channel_id() })
                             alert("[discord-enc]: your auth key has been set")
                         }
+                        let show_message = () => {
+                            message_element.innerText = t;
+                        }
 
                         create_button_on_message(message_element, "set key", button_func, "#AD52CA")
+                        create_button_on_message(message_element, "show message", show_message, color="#fff")
 
                         delete button_func
                     }
