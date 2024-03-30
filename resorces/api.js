@@ -4,7 +4,7 @@
 var gid = '' // Current guild id
 var cid = '' // Current channel id
 var authHeader = '' // Authorization token
-var autoUpdateToken = undefined // Should the token be updated automatically when a request with the token is intercepted?
+var autoUpdateToken = false // Should the token be updated automatically when a request with the token is intercepted?
 
     // Call this to update `cid` and `gid` to current channel and guild id
 var update_guildId_and_channelId_withCurrentlyVisible = () => {

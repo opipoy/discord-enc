@@ -10,3 +10,11 @@
 .b_on_message:hover{
   background-color: rgba(0,0,0,0.5);
 }
+
+#discord_enc_err{
+ color : red;
+ background-color : pink;
+ border-radius : 3px;
+ margin : 5px;
+ padding: 5px;
+}

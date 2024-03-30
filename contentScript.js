@@ -51,7 +51,7 @@
         bg_port.onMessage.addListener(async function (message) {
             if (
                 message.type === "send-message" &&
-                api.getConfig().authHeader != ""
+                api.getConfig().authHeader !== ""
             ) {
                 const output_message = await api.sendMessage(
                     get_channel_id(),
@@ -66,8 +66,8 @@
             }
             if (message.type === "auth-set") {
                 // HACK: mabe there is another, safer way...
-                api.setConfigAuthHeader(message.auth);
-                curr_usr = await api.getCurrentUser();
+                // api.setConfigAuthHeader(message.auth);
+                // curr_usr = await api.getCurrentUser();
             }
 
             if (message.type === "create-key") {
@@ -106,6 +106,17 @@
                 }
             }
         });
+    }
+
+    function create_error_msg(text) {
+        let container = document.querySelector("[class*='subtitleContainer_']");
+        let err = document.getElementById("discord_enc_err");
+        if (err === null) {
+            err = document.createElement("p");
+            err.id = "discord_enc_err";
+        }
+        err.textContent = "[discord-enc] ERROR: " + text;
+        container.appendChild(err);
     }
 
     async function ask_key_popup() {
@@ -158,11 +169,6 @@
 
     function create_discord_button() {
         try {
-            if (!port_is_open) {
-                bg_port = chrome.runtime.connect({ name: "content" });
-                listen_for_messages();
-                port_is_open = true;
-            }
             let button_div = document
                 .querySelector("[class*='inner_'][class*='sansAttachButton']")
                 .querySelector("[class*='buttons_']");
@@ -218,130 +224,144 @@
         message.appendChild(b_decrypt);
     }
 
-    async function reload() {}
-
-    async function on_url_change() {
+    async function check_for_special_messages() {
         let text;
         const rel_enc_message_code = enc_message_code.replace("\\n", "\n");
-        if (currentPage.includes("channels")) {
-            create_discord_button();
-            let messages = await api.getMessages(get_channel_id(), 50);
-            // PERF: mabe sending the messages as a list would be faster then sending it like this
-            // TODO: check what will be faster
-            messages.forEach(function (discord_message) {
-                // if sender is you
-                if (discord_message.author.id === curr_usr.id) {
-                    if (discord_message.content.includes(enc_message_code)) {
-                        bg_port.postMessage({
-                            type: "msg-load",
-                            id: discord_message.id,
-                            channel_id: get_channel_id(),
-                        });
-                    }
-                    if (discord_message.content.includes(key_message_code)) {
-                        discord_message = document.getElementById(
-                            "message-content-" + discord_message.id
-                        );
-                        discord_message.innerText = "Your Encryption key... 🔑";
-                        discord_message.style.fontWeight = "bold";
-                    }
-                } else {
-                    //discord_message = a[i];
-                    text = discord_message.content; //discord_message.innerText;
-                    let message_element = document.getElementById(
+        // PERF: mabe sending the messages as a list would be faster then sending it like this
+        // TODO: check what will be faster
+        messages.forEach(function (discord_message) {
+            // if sender is you
+            if (discord_message.author.id === curr_usr.id) {
+                if (discord_message.content.includes(enc_message_code)) {
+                    bg_port.postMessage({
+                        type: "msg-load",
+                        id: discord_message.id,
+                        channel_id: get_channel_id(),
+                    });
+                }
+                if (discord_message.content.includes(key_message_code)) {
+                    discord_message = document.getElementById(
                         "message-content-" + discord_message.id
                     );
-
-                    if (text.includes(enc_message_code)) {
-                        message_element.textContent = "";
-                        let textHolder = document.createElement("p");
-                        textHolder.style.fontWeight = "bold";
-                        message_element.appendChild(textHolder);
-                        textHolder.textContent =
-                            "encrypted message had been sent: ";
-
-                        const encrypted_text = text.replace(
-                            rel_enc_message_code,
-                            ""
-                        );
-
-                        let decrypt_func = () => {
-                            bg_port.postMessage({
-                                type: "dec-message",
-                                message: encrypted_text,
-                                message_id: discord_message.id,
-                                channel_id: discord_message.channel_id,
-                            });
-                        };
-
-                        let show_message = () => {
-                            message_element.innerText = encrypted_text;
-                        };
-
-                        create_button_on_message(
-                            message_element,
-                            "decrypt",
-                            decrypt_func
-                        );
-                        create_button_on_message(
-                            message_element,
-                            "show message",
-                            show_message,
-                            (color = "#fff")
-                        );
-                        delete button_func;
-                    } else if (
-                        text.includes(key_message_code.replace("\\n", "\n")) &&
-                        messages
-                    ) {
-                        message_element.textContent = "";
-                        let textHolder = document.createElement("p");
-                        textHolder.style.fontWeight = "bold";
-                        message_element.appendChild(textHolder);
-                        const t = text;
-
-                        textHolder.textContent =
-                            "the user had sent you a key: ";
-
-                        let button_func = () => {
-                            bg_port.postMessage({
-                                type: "pub-set",
-                                key: message_to_exported(t),
-                                channel_id: get_channel_id(),
-                            });
-                            alert("[discord-enc]: your auth key has been set");
-                        };
-                        let show_message = () => {
-                            message_element.innerText = t;
-                        };
-
-                        create_button_on_message(
-                            message_element,
-                            "set key",
-                            button_func,
-                            "#AD52CA"
-                        );
-                        create_button_on_message(
-                            message_element,
-                            "show message",
-                            show_message,
-                            (color = "#fff")
-                        );
-
-                        delete button_func;
-                    }
+                    discord_message.innerText = "Your Encryption key... 🔑";
+                    discord_message.style.fontWeight = "bold";
                 }
-            });
-        }
+            } else {
+                //discord_message = a[i];
+                text = discord_message.content; //discord_message.innerText;
+                let message_element = document.getElementById(
+                    "message-content-" + discord_message.id
+                );
+
+                if (text.includes(enc_message_code)) {
+                    message_element.textContent = "";
+                    let textHolder = document.createElement("p");
+                    textHolder.style.fontWeight = "bold";
+                    message_element.appendChild(textHolder);
+                    textHolder.textContent =
+                        "encrypted message had been sent: ";
+
+                    const encrypted_text = text.replace(
+                        rel_enc_message_code,
+                        ""
+                    );
+
+                    let decrypt_func = () => {
+                        bg_port.postMessage({
+                            type: "dec-message",
+                            message: encrypted_text,
+                            message_id: discord_message.id,
+                            channel_id: discord_message.channel_id,
+                        });
+                    };
+
+                    let show_message = () => {
+                        message_element.innerText = encrypted_text;
+                    };
+
+                    create_button_on_message(
+                        message_element,
+                        "decrypt",
+                        decrypt_func
+                    );
+                    create_button_on_message(
+                        message_element,
+                        "show message",
+                        show_message,
+                        (color = "#fff")
+                    );
+                    delete button_func;
+                } else if (
+                    text.includes(key_message_code.replace("\\n", "\n")) &&
+                    messages
+                ) {
+                    message_element.textContent = "";
+                    let textHolder = document.createElement("p");
+                    textHolder.style.fontWeight = "bold";
+                    message_element.appendChild(textHolder);
+                    const t = text;
+
+                    textHolder.textContent = "the user had sent you a key: ";
+
+                    let button_func = () => {
+                        bg_port.postMessage({
+                            type: "pub-set",
+                            key: message_to_exported(t),
+                            channel_id: get_channel_id(),
+                        });
+                        alert("[discord-enc]: your public key has been set");
+                    };
+                    let show_message = () => {
+                        message_element.innerText = t;
+                    };
+
+                    create_button_on_message(
+                        message_element,
+                        "set key",
+                        button_func,
+                        "#AD52CA"
+                    );
+                    create_button_on_message(
+                        message_element,
+                        "show message",
+                        show_message,
+                        (color = "#fff")
+                    );
+
+                    delete button_func;
+                }
+            }
+        });
     }
 
-    setInterval(function () {
+    async function reload() {
         if (currentPage !== location.href) {
             currentPage = location.href;
             on_url_change();
         }
-        reload();
-    }, 500);
+        if (!port_is_open) {
+            bg_port = chrome.runtime.connect({ name: "content" });
+            listen_for_messages();
+            port_is_open = true;
+        }
+        if (api.getConfig().authHeader !== "") {
+            check_for_special_messages();
+        }
+    }
+
+    async function on_url_change() {
+        if (currentPage.includes("channels")) {
+            if (api.getConfig().authHeader !== "") {
+                create_discord_button();
+            } else {
+                create_error_msg(
+                    "auth not found, please reload tab or open an issue"
+                );
+            }
+        }
+    }
+
+    setInterval(reload, 500);
 
     listen_for_messages();
 
